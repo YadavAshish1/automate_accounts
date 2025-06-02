@@ -5,18 +5,6 @@ const path = require('path');
 const poppler = require('pdf-poppler');
 const { log } = require('console');
 
-async function extractTextFromPDF(pdfPath) {
-  try {
-    const pdfBytes = fs.readFileSync(pdfPath);
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const text = (await pdfDoc.getPages())[0].getText();
-    return text || null;
-  } catch (error) {
-    
-    return null;
-  }
-}
-
 async function convertPDFToImage(pdfPath) {
   const outputDir = path.dirname(pdfPath);
  
@@ -51,7 +39,16 @@ async function extractTextWithOCR(imagePath) {
 function parseReceiptText(text) {
  
   const purchasedAt = text.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)?.[0];
-    const totalAmount = text.match(/Total\s*[:\-]?\s*\$?(\d+[.,]?\d*)/i)?.[1];
+    // const totalAmount = text.match(/Total\s*[:\-]?\s*\$?(\d+[.,]?\d*)/i)?.[1];
+    let totalAmountMatch = text.match(/Total\s*[:\-]?\s*\$?(\d+[.,]?\d*)/i);
+let totalAmount = totalAmountMatch?.[1];
+log(`Total amount match: ${totalAmountMatch}`, totalAmount);
+if (!totalAmount) {
+  // Try to match 'Payment' if 'Total' not found
+  log('Total not found, trying to match Payment', text);
+  totalAmountMatch = text.match(/Payment\s*[:\-]?\s*\$?(\d+[.,]?\d*)/i);
+  totalAmount = totalAmountMatch?.[1];
+}
     const merchantName = text.split('\n').find(line => line.trim().length > 0);
 
   return {
