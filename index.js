@@ -56,11 +56,6 @@ app.post('/upload', upload.single('receipt'), async (req, res) => {
         const filePath = path.join('uploads', req.file.originalname);
         fs.renameSync(req.file.path, filePath);
         
-        const duplicate = await checkDuplicateFile(req.file.originalname, req.user.id);
-        if (duplicate) {
-            return res.status(400).json({ error: 'File with same name already exists' });
-        }
-
 
         db.run(
             'INSERT INTO receipt_file (file_name, file_path, user_id) VALUES (?, ?, ?)',
