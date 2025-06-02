@@ -29,6 +29,23 @@ if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
 }
 
+function checkDuplicateFile(fileName, userId) {
+    return new Promise((resolve, reject) => {
+        db.get(
+            'SELECT * FROM receipt_file WHERE file_name = ? AND user_id = ?',
+            [fileName, userId],
+            (err, row) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(row); // Will be undefined if no duplicate
+                }
+            }
+        );
+    });
+}
+
+
 // API Routes
 app.post('/upload', upload.single('receipt'), async (req, res) => {
     try {
@@ -39,6 +56,11 @@ app.post('/upload', upload.single('receipt'), async (req, res) => {
         const filePath = path.join('uploads', req.file.originalname);
         fs.renameSync(req.file.path, filePath);
         
+        const duplicate = await checkDuplicateFile(req.file.originalname, req.user.id);
+        if (duplicate) {
+            return res.status(400).json({ error: 'File with same name already exists' });
+        }
+
 
         db.run(
             'INSERT INTO receipt_file (file_name, file_path, user_id) VALUES (?, ?, ?)',
